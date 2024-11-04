@@ -1,26 +1,98 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-//include images into your bundle
-import rigoImage from "../../img/rigo-baby.jpg";
+import Carta from "./Carta";
+import Cabecera from "./Cabecera";
+
 
 //create your first component
 const Home = () => {
-	return (
-		<div className="text-center">
-			<h1 className="text-center mt-5">Hello Rigo!</h1>
-			<p>
-				<img src={rigoImage} />
-			</p>
-			<a href="#" className="btn btn-success">
-				If you see this green button... bootstrap is working...
-			</a>
-			<p>
-				Made by{" "}
-				<a href="http://www.4geeksacademy.com">4Geeks Academy</a>, with
-				love!
-			</p>
-		</div>
-	);
+  //Hacemos que la api cree un usuario nada más carge la web
+  useEffect(() => {
+    fetch("https://playground.4geeks.com/todo/users/AlvaroTodo", {
+      headers: {
+        accept: "application/json",
+        "Content-type": "application/json",
+      },
+      method: "POST"
+    })
+  }, []);
+  const datos = () =>{
+    fetch("https://playground.4geeks.com/todo/users/AlvaroTodo")
+      .then(response => response.json())
+      .then(response => setTask(response.todos))
+  } 
+  useEffect(()=>{
+    datos()
+  }, []);
+
+  //Creamos una variable vacía para que almacene los datos del input
+  const [tarea, setTarea] = useState("");
+
+  // Creamos un array vacio para que almacene los datos que le llegan de la variable de tarea
+  const [task, setTask] = useState([{}]);
+
+  //Creamos la funcion para que el programa lea el valor que hay en el input y lo almacene en tarea
+  const handleChange = (event) => {
+    setTarea(event.target.value);
+  };
+
+
+  //Creamos la funcion para que añada un elemento nuevo al array task
+  const nuevaTarea = () => {
+    //Validamos que si no hay informacion en la variable tarea no pueda añadir nada al array de task
+    if (tarea == "") {
+      alert("Debes crear una tarea");
+    } else {
+      //Creamos un objeto para almacenar la tarea
+      const newTask = {
+        label: tarea,
+        is_done: false
+      }
+      //hacemos el fetch para que cree la tarea
+      fetch("https://playground.4geeks.com/todo/todos/AlvaroTodo", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(newTask)
+      });
+      datos();
+      setTarea();
+    }
+  };
+
+
+  return (
+    <div>
+      <Cabecera input={handleChange} nuevaTarea={nuevaTarea} />
+      <div className="row tareas">
+        {task.length > 0 ? (
+          //Mapeamos el array que tenemos en cada momento
+          task.map((element) => {
+            //Creamos la funcion que elimina la carta seleccionada
+            const eliminarTarea = () => {
+              fetch(`https://playground.4geeks.com/todo/todos/${element.id}`, {
+                method: "DELETE"
+              })
+              datos();
+            };
+            //Retornamos una carta por cada elemento del array
+            return (
+              <>
+                <Carta task={element.label} eliminarTarea={eliminarTarea} />
+              </>
+            );
+          })
+        ) : (
+          <div className="tareasPendientes">
+            <p>No hay tareas, añadir tareas</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Home;
+
